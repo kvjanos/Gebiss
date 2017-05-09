@@ -1,0 +1,68 @@
+// "OpenSeriesUsingFilter.txt"
+// Opens an image series as a stack using a customizable
+// file name filter. To customize the filter, edit the
+// filter() method.
+
+macro "Open Series Using Filter" {
+    requires("1.34e"); 
+    dir = getDirectory("Choose a Directory ");
+    list = getFileList(dir);
+    stack = 0;
+    
+    // does name contain any string from p array?
+    p = newArray("A01_s1", "A04_s1", "A12_s1", "B01_s1", "B12_s1", "C01_s1", "C12_s1", "D01_s1", "D03_s1", "D12_s1", "E01_s1", "E12_s1", "F01_s1", "F12_s1", "G01_s1", "G12_s1", "H01_s1", "H12_s1");
+
+    setBatchMode(true); 
+    for (n=0; n<p.length; n++) {
+        showProgress(n, p.length);
+	    for (i=0; i<list.length; i++) {
+	        if (filter(i, list[i], p[n])) {
+	            open(dir+list[i]);
+	            run("Copy");
+	            if (stack==0) {
+	                type = "" +bitDepth;
+	                if (type=="24") type = "RGB";
+	                w=getWidth(); h=getHeight();
+	                //close();
+	                newImage("stack "+(n+1),type,w,h,1);
+	                stack = getImageID();
+	            } else {
+	                //close();
+	                selectImage(stack);
+	                run("Add Slice");
+	            }
+	            run("Paste");
+	        }
+	    }
+    	if (stack!=0) {run("k-means Clustering ...", "number_of_clusters=4 cluster_center_tolerance=0.00010000 enable_randomization_seed randomization_seed=48");
+        saveAs("Tiff", "/mnt/disk2/Horst/3_2008-04-02_Feldolgozas/1_k-means_clusters_img/tmp/set1_b_"+p[n]+"_w1-w2_k-m4_Clusters.tif");
+        //close();
+        }
+    	stack = 0;
+    }
+    //if (stack!=0) setSlice(1);
+    setBatchMode(false);
+}
+
+function filter(i, name, pattern) {
+    // is directory?
+    if (endsWith(name,"/")) return false;
+
+    // is tiff?
+    //if (!endsWith(name,".tif")) return false;
+
+    // ignore thumbnail files
+    if (endsWith(name,"_Thumb.TIF")) return false;
+
+    if (indexOf(name, pattern)>-1) return true;
+
+    // open only first 10 images
+    // if (i>=10) return false;
+
+    return false;
+}
+
+//function pattern(p){
+//  for (i=0; i<p.length; i++)
+//  p = p[i];
+//}

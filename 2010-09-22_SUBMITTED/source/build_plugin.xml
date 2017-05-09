@@ -1,0 +1,110 @@
+<!-- Ant makefile for ImageJ -->
+
+<project name="ImageJ" default="run">
+
+  <target name="compile" description="Compile everything.">
+    <!-- First, ensure the build directory exists. -->
+    <mkdir dir="build" />
+    <!-- Build everything; add debug="on" to debug -->
+    <javac srcdir="." destdir="build" optimize="on" source="1.6" target="1.6" debug="on">
+      <!-- The plugins directory only needs to be 
+             present at runtime, not at build time. -->
+      <exclude name="plugins/**"/>
+  	<classpath>
+        <!-- default library path is /usr/lib/jvm/java-6-sun-1.6.0.13/jre/lib/ext/ -->
+        <!--pathelement location="../commons-beanutils-1.7.0.jar"/>
+        <pathelement location="../junit.jar"/-->
+        <pathelement location="../plugins/biiImageJ3DViewer.jar"/>
+        <pathelement location="../plugins/ij-plugins_toolkit_bii.jar"/>
+        <pathelement location="../j3dcore.jar"/>
+        <pathelement location="../j3dutils.jar"/>
+            <pathelement location="../vecmath.jar"/>
+    </classpath>
+    </javac>
+  </target>
+  
+
+  <target name="build" depends="compile" description="Build ij.jar.">
+    <!-- Copy needed files into the build directory. -->
+    <copy file="IJ_Props.txt" todir="build" />
+    <copy file="images/microscope.gif" tofile="build/microscope.gif" />
+    <copy file="images/about.jpg" tofile="build/about.jpg" />
+	<copy file="plugins/MacAdapter.class" tofile="build/MacAdapter.class" /> 
+    <copy todir="build/macros"><fileset dir="macros"/></copy>
+    <!-- Build ij.jar. -->
+    <jar jarfile="ij.jar" basedir="build"
+         manifest="MANIFEST.MF" />  	
+    </target>
+
+
+  <target name="plugins" depends="build" description="Copy plugins to correct locations">
+    <!--delete dir="../plugins" /-->
+    <delete file="../plugins/gebiss_.jar" />
+	<copy todir="../plugins">
+    <fileset dir="build">
+      <include name="**/*.class"/>
+    </fileset>
+    <fileset dir=".">
+      <include name="plugins.config"/>
+    </fileset>
+  	</copy>
+    <delete dir="../plugins/ij" />
+    <delete file="../plugins/MacAdapter.class" />
+    <jar jarfile="../plugins/gebiss_.jar" basedir="../plugins">
+      <!--exclude name="plugins/SegmentingAssistant/**"/-->
+      <!--exclude name="*.class"/-->
+      <exclude name="net/**"/>
+      <exclude name="plugins.config"/>
+      <exclude name="*/*"/>
+    </jar>  	
+    <delete dir="../plugins/net" />
+    <delete dir="../plugins/Gebiss" />
+    <delete>
+		<fileset dir="../plugins" includes="**/*.class"/>
+		<fileset dir="../plugins" includes="**/plugins.config"/>
+    </delete>
+  </target>
+
+  <target name="clean" description="Delete the build files.">
+    <delete dir="build" />
+    <delete file="ij.jar" />
+  </target>
+
+
+  <target name="run" depends="build, plugins" description="Build and run ImageJ.">
+    <copy file="ij.jar" toDir=".." />
+    <java maxmemory="640m" jar="ij.jar" fork="yes" />
+  </target>
+    
+
+  <target name="run2" depends="build" description="Build and run ImageJ.">
+    <!-- Run in ImageJ directory -->
+    <copy file="ij.jar" toDir=".." />
+    <java maxmemory="640m" dir=".." jar="ij.jar" fork="yes" />
+  </target>
+
+  <target name="zip" depends="clean" description="Build zrc.zip.">
+    <zip zipfile="../src.zip"
+       basedir=".."
+       includes="source/**"
+    />
+  </target>
+
+
+  <target name="javadocs" description="Build the JavaDocs.">
+    <delete dir="../api" />
+    <mkdir dir="../api" />
+    <javadoc 
+           sourcepath="."
+           packagenames="ij.*"
+           destdir="../api"
+           author="true"
+           version="true"
+           use="true"
+           windowtitle="ImageJ API">
+    </javadoc>
+  </target>
+  
+  
+   </project>
+
